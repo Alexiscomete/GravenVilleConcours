@@ -5,15 +5,15 @@ const index = require("./index");
  * Liste des commandes
  * @type {Map<string, (message: Discord.Message, args: string[], content: string) => void>}
  */
-const commandes = new Map();
+const commands = new Map();
 
 /**
  * Ajouter une commande
  * @param {(message: Discord.Message, args: string[], content: string) => void} commande 
  * @param {string} name
  */
-function addCommande(name, commande) {
-    commandes.set(name, commande);
+function addCommand(name, commande) {
+    commands.set(name, commande);
 }
 
 /*
@@ -26,7 +26,7 @@ index.bot.on("message", (msg) => {
         let commande = content.slice(1);
         let args = commande1.split(" ");
         commande = args[0];
-        let commandFunction = commandes.get(commande);
+        let commandFunction = commands.get(commande);
         if (commandFunction != undefined) {
             //supression de la commande
             if (message.deletable) message.delete();
@@ -43,5 +43,5 @@ index.bot.on("message", (msg) => {
 });
 
 module.exports = {
-    addCommande,
+    addCommand,
 }
