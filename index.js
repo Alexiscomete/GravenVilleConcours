@@ -14,7 +14,6 @@ module.exports = {
 
 const command = require("./commands");
 const game = require("./game");
-const confirm = require("./confirm");
 
 /*
 commande qui permet de commencer une partie
@@ -27,11 +26,14 @@ command.addCommand("lg", (msg, args, content) => {
             });
         return;
     }
+
     let serveur = msg.guild;
     let nbOfNull = 0;
-    let thisGame = new game.Game();
-
-    confirm.confirm(thisGame, msg.member);
+    
+    /**
+     * @type {Discord.GuildMember[]}
+     */
+    let players = [];
 
     //boucle pour trouver tous les membres
     for (let arg of args) {
@@ -42,19 +44,25 @@ command.addCommand("lg", (msg, args, content) => {
         if (member == undefined) {
             nbOfNull++;
         }else{
-            confirm.confirm(thisGame, member);
+            players.push(member);
         }
     }
 
-    msg.member.send("Nombre de joueurs introuvables : " + nbOfNull);
+    msg.channel.send("Nombre de joueurs introuvables : " + nbOfNull);
+    if (players.length >= 4) {
+        //lancement des demandes de partie
+        new game.Game(serveur, msg.member, players);
+    }else{
+        msg.channel.send("Il faut être min 5 pour jouer : il y a un imposteurs pour 5 villageois");
+    }
 });
 
 command.addCommand("help", (msg, args, content) => {
     msg.author.send(new Discord.MessageEmbed()
-    .setAuthor("Message d'aide")
-    .setColor("00ff20")
-    .setTimestamp()
-    .addField("lg", "Commence une partie de *Un loup dans la Bergerie.*, vous devez mettre les noms des autres joueurs en arguments")
-    
+        .setAuthor("Message d'aide")
+        .setColor("00ff20")
+        .setTimestamp()
+        .addField("lg", "Commence une partie de *Un loup dans la Bergerie.*, vous devez mettre les noms des autres joueurs en arguments")
+        .addField("start", "Permet de commencer la partie même si tout les joueurs n'ont pas accepté.")
     );
 });
