@@ -24,19 +24,19 @@ index.bot.on("message", (msg) => {
     if (content.startsWith("$")) {
         //séparation des arguments et supression du préfix
         let commande = content.slice(1);
-        let args = commande1.split(" ");
+        let args = commande.split(" ");
         commande = args[0];
         let commandFunction = commands.get(commande);
         if (commandFunction != undefined) {
             //supression de la commande
-            if (message.deletable) message.delete();
+            if (msg.deletable) msg.delete();
             //exécution
-            commandFunction(message, args, content);
+            commandFunction(msg, args, content);
         } else {
             // message d'erreur
             msg.channel.send("Cette commande n'existe pas ...\nLa commande indiquée est : " + commande + " \nPS : les abréviations ne sont pas acceptées").then(message => {
                 if(message.deletable)
-                msg.delete({ timeout: 50000 });
+                message.delete({ timeout: 50000 });
                 });
         }
     }
