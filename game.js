@@ -38,7 +38,11 @@ class Game {
          * @type {Discord.GuildMember[]}
          */
         this.playersWaiting = players;
-        //la liste des joueurs
+        //
+        /**
+         * la liste des joueurs
+         * @type {Discord.GuildMember[]}
+         */
         this.players = [];
         this.players.push(owner);
         //la guild de la partie
@@ -47,9 +51,9 @@ class Game {
         this.owner = owner;
         this.channel = channel;
         //les villageois est le seul rôle qui n'est pas ds la liste car il ne foncionne pas comme les autres
-        this.vi = new roles.Villager();
+        this.vi = new roles.Villager(this);
         //j'ajoute cette instance dès maintenant car il y a forcément un imposteur ds la partie
-        this.roles.push(new roles.Impostor);
+        this.roles.push(new roles.Impostor(this));
 
         games.push(this);
         guilds.set(guild.id, this);
@@ -90,6 +94,7 @@ class Game {
             this.roles[0].count = Math.round(this.players.length / 5);
             //pour le cas futur où il y aurait d'autres rôles
             //je duplique la liste pour la passer par valeur : chaque rôle sélectionne les joueurs qu'il veut puis le passe au suivant
+            console.log("ps : " + this.players);
             let ps = [];
             ps.push(this.players);
             for (let r of this.roles) {
@@ -98,6 +103,8 @@ class Game {
                 r.addPlayers(ps);
             }
             this.vi.addPlayers(ps);
+            ps = [];
+            console.log(this.players);
         }else{
             this.owner.send("Il faut être 5 ou plus pour lancer une partie, votre partie vas être supprimée pour que vous puissiez en recommencer une");
             guilds.delete(this.guild.id);

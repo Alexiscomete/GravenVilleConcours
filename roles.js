@@ -59,7 +59,10 @@ class Role {
     name = "";
     //la priorité du rôle pendant une journée (dans une liste triée)
     priority = 0;
-    //la liste des joueurs ayant ce rôle
+    /**
+     * la liste des joueurs ayant ce rôle
+     * @type {Discord.GuildMember[]}
+     */
     players = [];
     //l'action fait à chaque tour et condition de fin de tour
     action() {}
@@ -77,6 +80,10 @@ class Role {
      * @type {game.Game}
      */
     game;
+
+    constructor(game) {
+        this.game = game;
+    }
 }
 
 //pour les noms villageois : des règles en plus
@@ -87,37 +94,52 @@ class Special extends Role {
      * @param {Discord.Guild} guild
      */
     addPlayers(players) {
-        this.channel = this.game.guild.channels.add("");
-        this.channel.setName(this.name);
-        this.channel.updateOverwrite(this.game.guild.roles.everyone, {VIEW_CHANNEL: false});
-        for (let i = 0; i < count; i++) {
-            let j = getRandom(players.length);
-            let p = players[j];
-            players.splice(j, 1);
-            this.players.push(p);
-            //on évite qu'ils puissnet evoyer ds msg quand il fait jour
-            this.channel.updateOverwrite(p, {VIEW_CHANNEL: true, SEND_MESSAGES: false});
-        }
+        this.game.guild.channels.create(this.name).then((ch) => {
+            this.channel = ch;
+            this.channel.updateOverwrite(this.game.guild.roles.everyone, {VIEW_CHANNEL: false});
+            for (let i = 0; i < this.count; i++) {
+                let j = getRandom(players.length);
+                let p = players[j];
+                players.splice(j, 1);
+                this.players.push(p);
+                //on évite qu'ils puissent evoyer ds msg quand il fait jour ou que ce n'est pas leur tour
+                this.channel.updateOverwrite(p, {VIEW_CHANNEL: true, SEND_MESSAGES: false});
+                p.send("Vous êtes " + this.name);
+            }
+        });
     }
     //le nb de joueurs qui doivent avoir ce rôle
     count = 0;
 }
 
 class Impostor extends Special{
-    name = "impostor";
+    name = "imposteur";
     priority = 6;
     
 }
 
 class Villager extends Role{
-    name = "villager";
+    name = "villageois";
     priority = 0;
 
+    /**
+     * @param {Discord.GuildMember[]} players 
+     */
     addPlayers(players) {
-        this.channel = this.game.guild.channels.add("");
-        this.channel.setName(this.name);
-        //la nuit, ils ne peuvent pas envoyer de msg.
-        this.channel.updateOverwrite(this.game.guild.roles.everyone, {SEND_MESSAGES: false});
+        this.players.push(players);
+        players = [];
+        this.game.guild.channels.create(this.name).then((ch) => {
+            this.channel = ch;
+            //la nuit, ils ne peuvent pas envoyer de msg.
+            this.channel.updateOverwrite(this.game.guild.roles.everyone, {SEND_MESSAGES: false});
+        });
+
+        for (let p of this.players) {
+            console.log("fddddddddddddddddddddd");
+            console.log("p : " + p);
+            p.send("Malheuresement, vous êtes villageois");
+
+        }
     }
 }
 
