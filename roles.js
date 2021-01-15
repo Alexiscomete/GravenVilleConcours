@@ -1,10 +1,15 @@
 const Discord = require("discord.js");
+const game = require("./game");
 
 /*
 Ce system est prévu pour un nombre illimité de rôles !
 Il me suffit de créer une nouvelle class et d'ajouter les conditions
 dans game.js
 */
+
+function getRandom(max) {
+    return Math.floor(Math.random() * max);
+}
 
 //permet de créer un vote
 class Vote {
@@ -62,25 +67,36 @@ class Role {
     actionBegin() {}
     //les conditions de victoire
     victory() {}
-}
-
-//pour les noms villageois : des règles en plus
-class Special extends Role {
     /**
      * le salon privé
      * @type {Discord.GuildChannel}
      */
     channel;
     /**
+     * la partie en cour, pour pouvoir utiliser certaines choses plus facilement
+     * @type {game.Game}
+     */
+    game;
+}
+
+//pour les noms villageois : des règles en plus
+class Special extends Role {
+    /**
      * pour sélectionner les joueurs
-     * @param {Discord.GuildMember} players 
+     * @param {Discord.GuildMember[]} players 
      * @param {Discord.Guild} guild
      */
-    addPlayers(players, guild) {
-        this.channel = guild.channels.add("");
+    addPlayers(players) {
+        this.channel = this.game.guild.channels.add("");
         this.channel.setName(this.name);
+        this.channel.updateOverwrite(this.game.guild.roles.everyone, {VIEW_CHANNEL: false});
         for (let i = 0; i < count; i++) {
-            
+            let j = getRandom(players.length);
+            let p = players[j];
+            players.splice(j, 1);
+            this.players.push(p);
+            //on évite qu'ils puissnet evoyer ds msg quand il fait jour
+            this.channel.updateOverwrite(p, {VIEW_CHANNEL: true, SEND_MESSAGES: false});
         }
     }
     //le nb de joueurs qui doivent avoir ce rôle
@@ -96,6 +112,13 @@ class Impostor extends Special{
 class Villager extends Role{
     name = "villager";
     priority = 0;
+
+    addPlayers(players) {
+        this.channel = this.game.guild.channels.add("");
+        this.channel.setName(this.name);
+        //la nuit, ils ne peuvent pas envoyer de msg.
+        this.channel.updateOverwrite(this.game.guild.roles.everyone, {SEND_MESSAGES: false});
+    }
 }
 
 module.exports = {
@@ -104,3 +127,4 @@ module.exports = {
     Villager,
     Special
 }
+

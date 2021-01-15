@@ -42,7 +42,7 @@ class Game {
         this.players = [];
         this.players.push(owner);
         //la guild de la partie
-        this.guild = guild.id;
+        this.guild = guild;
         //owner de la partie et donc administrateur de celle-ci, un admin du serveur peut aussi utiliser les commandes admins
         this.owner = owner;
         this.channel = channel;
@@ -89,14 +89,18 @@ class Game {
             //détermine le nb de lg
             this.roles[0].count = Math.round(this.players.length / 5);
             //pour le cas futur où il y aurait d'autres rôles
+            //je duplique la liste pour la passer par valeur : chaque rôle sélectionne les joueurs qu'il veut puis le passe au suivant
+            let ps = [];
+            ps.push(this.players);
             for (let r of this.roles) {
                 //je duplique la liste pour la passer par valeur
                 let ps = [];
-                r.addPlayers()
+                r.addPlayers(ps);
             }
+            this.vi.addPlayers(ps);
         }else{
             this.owner.send("Il faut être 5 ou plus pour lancer une partie, votre partie vas être supprimée pour que vous puissiez en recommencer une");
-            guilds.delete(this.guild);
+            guilds.delete(this.guild.id);
             games.splice(games.indexOf(this), 1);
             msgW.forEach((v, k, m) => {
                 if (v == this) {
