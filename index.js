@@ -68,6 +68,7 @@ bot.on("ready", () => {
             .setTimestamp()
             .addField("lg", "Commence une partie de *Un loup dans la Bergerie.*, vous devez mettre les noms des autres joueurs en arguments")
             .addField("start", "Permet de commencer la partie même si tout les joueurs n'ont pas accepté.")
+            .addField("ac", "Cette commande permet de faire son action")
         );
     });
 

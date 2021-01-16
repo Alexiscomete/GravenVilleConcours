@@ -72,7 +72,7 @@ class Role {
     victory() {}
     /**
      * le salon privé
-     * @type {Discord.GuildChannel}
+     * @type {Discord.TextChannel}
      */
     channel;
     /**
@@ -115,7 +115,12 @@ class Special extends Role {
 class Impostor extends Special{
     name = "imposteur";
     priority = 6;
-    
+    actionBegin() {
+        for (const p of this.players) {
+            this.channel.updateOverwrite(p, {SEND_MESSAGES: true});
+        }
+        this.channel.send("Les imposteurs se réveillent ... qui voulez vous tuer ce soir ?");
+    }
 }
 
 class Villager extends Role{
@@ -127,20 +132,22 @@ class Villager extends Role{
      */
     addPlayers(players) {
         this.players.push(...players);
-        players = [];
         this.game.guild.channels.create(this.name).then((ch) => {
             this.channel = ch;
-            //la nuit, ils ne peuvent pas envoyer de msg.
-            this.channel.updateOverwrite(this.game.guild.roles.everyone, {SEND_MESSAGES: false});
+            this.channel.updateOverwrite(this.game.guild.roles.everyone, {VIEW_CHANNEL: false});
+            //pour éviter que tous le monde puisse parler dnas le salon des villageois, je met un role à tous les joueurs de la partie
+            this.game.guild.roles.create().then((role) => {
+                this.gameRole = role;
+                role.setName("Lg");
+                //la nuit, ils ne peuvent pas envoyer de msg.
+                this.channel.updateOverwrite(role, {SEND_MESSAGES: false, VIEW_CHANNEL: true});
+            });
+            
         });
 
-
-
+        //annonce aux villageois
         for (const p of this.players) {
-            console.log("fddddddddddddddddddddd");
-            console.log("p : " + p);
             p.send("Malheuresement, vous êtes villageois");
-
         }
     }
 }

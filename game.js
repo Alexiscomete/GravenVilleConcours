@@ -25,9 +25,8 @@ class Game {
      * @param {Discord.TextChannel} channel
      */
     constructor(guild, owner, players, channel) {
-        //l'index du prochain rôle
-        this.status = 0;
-        this.statusRole = "";
+        //l'index du prochain rôle, -1 pour les villageois et -2 pour en attente de joueurs
+        this.status = -2;
         /**
          * la liste des rôles non villageois dans la partie
          * @type {roles.Special[]}
@@ -89,7 +88,8 @@ class Game {
                     msgW.delete(k);
                 }
             });
-            this.channel.send("La partie de ***Un loup dans la Bergerie.*** va commencer");
+            this.channel.send("La partie de ***Un loup dans la Bergerie.*** va commencer, la partie commence en mode nuit. SVP les admins ne trichez pas.");
+            this.status = 0;
             //détermine le nb de lg
             this.roles[0].count = Math.round(this.players.length / 5);
             //pour le cas futur où il y aurait d'autres rôles
@@ -102,8 +102,13 @@ class Game {
                 r.addPlayers(ps);
             }
             this.vi.addPlayers(ps);
-            ps = [];
-            console.log(this.players);
+            ps = []; //on évite de gacher de la ram
+            //on tri la liste de rôles spéciaux (pour le moment il y a seulement les lg mais je préfère faire comme si il y en avait une vingtaine)
+            this.roles.sort((a, b) => {
+                return a.priority-b.priority;
+            });
+            //on commence l'action : set ds permissions et annonce dans le salon
+            this.roles[0].actionBegin();
         }else{
             this.owner.send("Il faut être 5 ou plus pour lancer une partie, votre partie vas être supprimée pour que vous puissiez en recommencer une");
             guilds.delete(this.guild.id);
@@ -115,8 +120,52 @@ class Game {
             });
         }
     }
-    action() {
+    /**
+     * 
+     * @param {Discord.Message} msg 
+     * @param {string[]} args 
+     * @param {string} content 
+     */
+    action(msg, args, content) {
+        if (this.status == -2) {
+            msg.member.send("La partie n'a pas encore commencé ! Attendez au moins de connaitre votre rôle pour jouer !");
+        }else if (this.status == -1) { // le tour des villageois
+            if (this.vi.action(msg, args, content)) {
+                this.next();
+            }
+        }else if (this.roles[this.status].action(msg, args, content)) { //je demande au rôle de jouer son action pour ce message, si return true alors c'est qu'il a finit son tour et que je peut passer à la suite
+            this.next();
+        }
+    }
 
+    next() {
+        let victory = false // si quelqu'un a gagné
+        for (let it = 0; it < this.roles.length && !victory; it++) { //on regarde si un role a gagné
+            const r = this.roles[it];
+            if (r.victory()) {
+                this.vi.channel.send("Les/La personne(s) avec le role " + r.name + " a/ont gagné(s) !");
+                victory = true;
+            }
+        }
+        if (victory) {
+            this.victory;
+        }else {
+            if (this.vi.victory()) {
+                this.victory();
+                return;
+            }
+
+            this.status++; //permet de passer au rôle suivant
+
+            if (this.status == this.roles.length) {
+                this.status = -1;
+            }
+        }
+        
+    }
+
+    victory() { // permet de supprimer tous les salons !
+        
     }
 }
 
@@ -158,5 +207,18 @@ command.addCommand("start", (msg, args, content) => {
         game.start();
     }else {
         msg.reply("aucune partie n'est en attente sur ce serveur");
+    }
+});
+
+command.addCommand("ac", (msg, args, content) => {
+    if (!msg.guild) {
+        msg.author.send("Acune partie en MP !!");
+        return;
+    }
+    const gameAction = guilds.get(msg.guild.id);
+    if (gameAction) {
+        gameAction.action();
+    }else{
+        msg.member.send("Acune partie sur ce serveur !!");
     }
 });
