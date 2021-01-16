@@ -85,7 +85,7 @@ class Role {
      */
     players = [];
     //l'action fait à chaque tour et condition de fin de tour
-    action() { }
+    action(msg, args, content) { }
     //le début de l'action : set des permissions pour parler
     actionBegin() { }
     //les conditions de victoire
@@ -140,7 +140,7 @@ class Impostor extends Special {
             this.channel.updateOverwrite(p, { SEND_MESSAGES: true });
         }
         this.channel.send("Les imposteurs se réveillent ... qui voulez vous tuer ce soir ?");
-        this.vote = new Vote()
+        this.vote = new Vote(this.players, this.game.players);
     }
 }
 
@@ -173,8 +173,12 @@ class Villager extends Role {
     }
 
     actionBegin() {
+        this.channel.send("Le jour se lève ... mais qui sont les imposteurs ?");
         this.channel.updateOverwrite(this.gameRole, { SEND_MESSAGES: true});
+        this.vote = new Vote(this.game.players, this.game.players);
     }
+
+    
 }
 
 module.exports = {
