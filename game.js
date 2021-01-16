@@ -66,8 +66,8 @@ class Game {
                 msg.react('❌');
                 msgW.set(msg.id, this);
             });
-            
-            
+
+
         }
     }
     /**
@@ -105,11 +105,11 @@ class Game {
             ps = []; //on évite de gacher de la ram
             //on tri la liste de rôles spéciaux (pour le moment il y a seulement les lg mais je préfère faire comme si il y en avait une vingtaine)
             this.roles.sort((a, b) => {
-                return a.priority-b.priority;
+                return a.priority - b.priority;
             });
             //on commence l'action : set ds permissions et annonce dans le salon
             this.roles[0].actionBegin();
-        }else{
+        } else {
             this.owner.send("Il faut être 5 ou plus pour lancer une partie, votre partie vas être supprimée pour que vous puissiez en recommencer une");
             guilds.delete(this.guild.id);
             games.splice(games.indexOf(this), 1);
@@ -129,11 +129,11 @@ class Game {
     action(msg, args, content) {
         if (this.status == -2) {
             msg.member.send("La partie n'a pas encore commencé ! Attendez au moins de connaitre votre rôle pour jouer !");
-        }else if (this.status == -1) { // le tour des villageois
+        } else if (this.status == -1) { // le tour des villageois
             if (this.vi.action(msg, args, content)) {
                 this.next();
             }
-        }else if (this.roles[this.status].action(msg, args, content)) { //je demande au rôle de jouer son action pour ce message, si return true alors c'est qu'il a finit son tour et que je peut passer à la suite
+        } else if (this.roles[this.status].action(msg, args, content)) { //je demande au rôle de jouer son action pour ce message, si return true alors c'est qu'il a finit son tour et que je peut passer à la suite
             this.next();
         }
     }
@@ -149,7 +149,7 @@ class Game {
         }
         if (victory) {
             this.victory;
-        }else {
+        } else {
             if (this.vi.victory()) {
                 this.victory();
                 return;
@@ -159,13 +159,19 @@ class Game {
 
             if (this.status == this.roles.length) {
                 this.status = -1;
+                this.vi.actionBegin();
+                return;
             }
+
+            this.roles[this.status].actionBegin();
         }
-        
+
     }
 
-    victory() { // permet de supprimer tous les salons !
-        
+    victory() { // permet de supprimer tous les salons spéciaux ! Je garde celui des villageois
+        for (const r of this.roles) {
+            r.channel.delete("Fin du jeu");
+        }
     }
 }
 
@@ -179,11 +185,11 @@ index.bot.on("messageReactionAdd", (react, user) => {
             msgW.delete(react.message.id);
             game.owner.send(`${user.username} a accepté(e) de jouer avec vous :)`);
             game.addPlayer(game.guild.members.cache.get(user.id));
-        }else if (react.emoji.name == '❌') {
+        } else if (react.emoji.name == '❌') {
             msgW.delete(react.message.id);
             game.playersWaiting.splice(game.playersWaiting.indexOf(game.guild.members.cache.get(user.id)), 1);
             game.owner.send(`${user.username} n'a pas voulu jouer avec vous :(`);
-        }else {
+        } else {
             user.send("Ceci n'est pas une réponse !!!!!");
         }
     }
@@ -196,7 +202,7 @@ module.exports = {
 command.addCommand("start", (msg, args, content) => {
     if (msg.guild && guilds.has(msg.guild.id)) {
         const game = guilds.get(msg.guild.id);
-        if (game.playersWaiting.length == 0){
+        if (game.playersWaiting.length == 0) {
             msg.reply("... cette partie a déjà démmarée");
             return;
         }
@@ -205,7 +211,7 @@ command.addCommand("start", (msg, args, content) => {
             return;
         }
         game.start();
-    }else {
+    } else {
         msg.reply("aucune partie n'est en attente sur ce serveur");
     }
 });
@@ -218,7 +224,7 @@ command.addCommand("ac", (msg, args, content) => {
     const gameAction = guilds.get(msg.guild.id);
     if (gameAction) {
         gameAction.action();
-    }else{
+    } else {
         msg.member.send("Acune partie sur ce serveur !!");
     }
 });

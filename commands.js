@@ -35,9 +35,9 @@ index.bot.on("message", (msg) => {
         } else {
             // message d'erreur
             msg.channel.send("Cette commande n'existe pas ...\nLa commande indiquée est : " + commande + " \nPS : les abréviations ne sont pas acceptées").then(message => {
-                if(message.deletable)
-                message.delete({ timeout: 50000 });
-                });
+                if (message.deletable)
+                    message.delete({ timeout: 50000 });
+            });
         }
     }
 });

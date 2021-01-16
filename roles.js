@@ -1,4 +1,5 @@
 const Discord = require("discord.js");
+const { bot } = require(".");
 const game = require("./game");
 
 /*
@@ -20,36 +21,55 @@ class Vote {
     votes = []
     /**
      * 
-     * @param {} who 
-     * @param {*} forWho 
+     * @param {Discord.GuildMember[]} who qui peut voter
+     * @param {Discord.GuildMember[]} forWho pour qui on peut voter
      */
     constructor(who, forWho) {
-
+        this.who = who;
+        this.forWho = forWho;
     }
     /**
      * permet d'ajouter une voie à un joueur
-     * @param {Discord.TextChannel} channel 
-     * @param {Discord.GuildMember} member
+     * @param {Discord.TextChannel} channel le lieu du vote
+     * @param {Discord.GuildMember} member qui vote
+     * @param {Discord.GuildMember} who qui viens de voter
      */
-    addVote(channel, member) {
+    addVote(channel, member, who) {
+        if (!this.forWho.includes(member)) {
+            channel.send("Vous ne pouvez pas voter pour cette personne !");
+            return;
+        }
+        if (!this.who.includes(who)) {
+            who.send("Vous ne pouvez pas voter !!!!!");
+            return;
+        }
+        this.who.splice(this.who.indexOf(who), 1); // permet d'éviter de voter 2 fois
         channel.send("Une nouvelle voie pour " + member.displayName + " !");
         /**
          * le joueur à qui on doit ajouter une voie
          * @type {{player: string, number: Number}}
          */
         let p;
-        this.votes.forEach((v, i, a) => {
+        this.votes.forEach((v, i, a) => { //permet de trouver la joueur dans la liste si il existe
             if (v.player == member.id) {
                 p = v;
             }
         });
         if (p) {
             p.number++;
-        }else{
+        } else {
             this.votes.push({
                 player: member.id,
                 number: 1
             });
+        }
+        this.votes.sort((a, b) => { // permet de trier la liste dans l'ordre décroissant
+            return b.number - a.number;
+        });
+        channel.send(bot.users.cache.get(this.votes[0].player).username + " est en tête de vote !");
+        if (this.who.length == 0) {
+            channel.send("Vote terminé");
+            return bot.users.cache.get(this.votes[0].player);
         }
     }
 }
@@ -65,11 +85,11 @@ class Role {
      */
     players = [];
     //l'action fait à chaque tour et condition de fin de tour
-    action() {}
+    action() { }
     //le début de l'action : set des permissions pour parler
-    actionBegin() {}
+    actionBegin() { }
     //les conditions de victoire
-    victory() {}
+    victory() { }
     /**
      * le salon privé
      * @type {Discord.TextChannel}
@@ -96,14 +116,14 @@ class Special extends Role {
     addPlayers(players) {
         this.game.guild.channels.create(this.name).then((ch) => {
             this.channel = ch;
-            this.channel.updateOverwrite(this.game.guild.roles.everyone, {VIEW_CHANNEL: false});
+            this.channel.updateOverwrite(this.game.guild.roles.everyone, { VIEW_CHANNEL: false });
             for (let i = 0; i < this.count; i++) {
                 let j = getRandom(players.length);
                 let p = players[j];
                 players.splice(j, 1);
                 this.players.push(p);
                 //on évite qu'ils puissent evoyer ds msg quand il fait jour ou que ce n'est pas leur tour
-                this.channel.updateOverwrite(p, {VIEW_CHANNEL: true, SEND_MESSAGES: false});
+                this.channel.updateOverwrite(p, { VIEW_CHANNEL: true, SEND_MESSAGES: false });
                 p.send("Vous êtes " + this.name);
             }
         });
@@ -112,18 +132,19 @@ class Special extends Role {
     count = 0;
 }
 
-class Impostor extends Special{
+class Impostor extends Special {
     name = "imposteur";
     priority = 6;
     actionBegin() {
         for (const p of this.players) {
-            this.channel.updateOverwrite(p, {SEND_MESSAGES: true});
+            this.channel.updateOverwrite(p, { SEND_MESSAGES: true });
         }
         this.channel.send("Les imposteurs se réveillent ... qui voulez vous tuer ce soir ?");
+        this.vote = new Vote()
     }
 }
 
-class Villager extends Role{
+class Villager extends Role {
     name = "villageois";
     priority = 0;
 
@@ -134,21 +155,25 @@ class Villager extends Role{
         this.players.push(...players);
         this.game.guild.channels.create(this.name).then((ch) => {
             this.channel = ch;
-            this.channel.updateOverwrite(this.game.guild.roles.everyone, {VIEW_CHANNEL: false});
+            this.channel.updateOverwrite(this.game.guild.roles.everyone, { VIEW_CHANNEL: false });
             //pour éviter que tous le monde puisse parler dnas le salon des villageois, je met un role à tous les joueurs de la partie
             this.game.guild.roles.create().then((role) => {
                 this.gameRole = role;
                 role.setName("Lg");
                 //la nuit, ils ne peuvent pas envoyer de msg.
-                this.channel.updateOverwrite(role, {SEND_MESSAGES: false, VIEW_CHANNEL: true});
+                this.channel.updateOverwrite(role, { SEND_MESSAGES: false, VIEW_CHANNEL: true });
             });
-            
+
         });
 
         //annonce aux villageois
         for (const p of this.players) {
             p.send("Malheuresement, vous êtes villageois");
         }
+    }
+
+    actionBegin() {
+        this.channel.updateOverwrite(this.gameRole, { SEND_MESSAGES: true});
     }
 }
 
