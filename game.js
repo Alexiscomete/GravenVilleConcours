@@ -96,10 +96,9 @@ class Game {
             //je duplique la liste pour la passer par valeur : chaque rôle sélectionne les joueurs qu'il veut puis le passe au suivant
             console.log("ps : " + this.players);
             let ps = [];
-            ps.push(this.players);
-            for (let r of this.roles) {
+            ps.push(...this.players);
+            for (const r of this.roles) {
                 //je duplique la liste pour la passer par valeur
-                let ps = [];
                 r.addPlayers(ps);
             }
             this.vi.addPlayers(ps);

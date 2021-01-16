@@ -126,7 +126,7 @@ class Villager extends Role{
      * @param {Discord.GuildMember[]} players 
      */
     addPlayers(players) {
-        this.players.push(players);
+        this.players.push(...players);
         players = [];
         this.game.guild.channels.create(this.name).then((ch) => {
             this.channel = ch;
@@ -134,7 +134,9 @@ class Villager extends Role{
             this.channel.updateOverwrite(this.game.guild.roles.everyone, {SEND_MESSAGES: false});
         });
 
-        for (let p of this.players) {
+
+
+        for (const p of this.players) {
             console.log("fddddddddddddddddddddd");
             console.log("p : " + p);
             p.send("Malheuresement, vous êtes villageois");
